@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+html, body {
+  padding:0px;
+  margin:0px;
+  width:100%;
+  height:100%;
+}
+
+#control-bar {
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+  padding: 6px;
+  top: 0px;
+  width: 100%;
+  height: 16px;
+  position: absolute;
+  cursor: pointer;
+  z-index: 9999;
+  background-color: #efefef;
+}
+
+#control-bar span {
+  z-index: 10000;
+}
+
+#licensing {
+  fill: green;
+}
+
+.node.fintech {
+  fill: rgb(133, 163, 133);
+}
+
+.node.bigbank {
+  fill: rgb(130, 138, 184);
+}
+
+.link {
+  fill: none;
+  stroke: #666;
+  stroke-width: 1.5px;
+}
+
+.link.partnership {
+  stroke: rgb(161, 120, 49);
+  stroke-width: 1;
+}
+
+.link.debt {
+  stroke: rgb(161, 79, 49);
+  stroke-width: 3;
+}
+
+.link.investment {
+  stroke: rgb(161, 49, 49);
+  stroke-width: 4;
+}
+
+.link.acquisition {
+  stroke: rgb(73, 100, 190);
+  stroke-width: 6;
+}
+
+.link.owned-by {
+  stroke: rgb(29, 42, 85);
+  stroke-width: 8;
+}
+
+circle {
+  fill: #ccc;
+  stroke: #333;
+  stroke-width: 1.5px;
+}
+
+text {
+  font: 10px sans-serif;
+  pointer-events: none;
+  text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, 0 -1px 0 #fff, -1px 0 0 #fff;
+}
+
+</style>
+<body>
+<script src="d3.v3.min.js"></script>
+<script src="d3-zoom.v1.min.js"></script>
+<script src="data.js"></script>
+<script>
+
+if (!Array.prototype.filter) {
+    // augment the Array prototype with a filter() that conforms
+    // to ECMAScript5
+    //   iterator - this function is called for each item, if it return
+    //       a truthy value, that item is added to the returned array
+    //   context - this is optional context to call the iterator. 'this'
+    //       inside the iterator will be set to context.
+    // returns an array with only items for which the iterator returned
+    //     a truthy value
+    Array.prototype.filter = function (iterator, context) {
+        var arr = [];
+        var i;
+        for (i = 0; i < this.length; i += 1) {
+            if (iterator.call(context, this[i])) {
+                arr.push(this[i]);
+            }
+        }
+        return arr;
+    };
+}
+
+var w = window,
+    d = document,
+    e = d.documentElement,
+    g = d.getElementsByTagName('body')[0],
+    x = w.innerWidth || e.clientWidth || g.clientWidth,
+    y = w.innerHeight|| e.clientHeight|| g.clientHeight;
+
+// Compute the distinct nodes from the links.
+links.forEach(function(link) {
+  link.Source -= 1;
+  link.Target -= 1;
+});
+
+nodes = nodes.filter(function(n) { return n.Id != "" });
+
+var dontshow = getParameterByName("dontshow");
+if (getParameterByName("dontshow")) {
+  nodes = nodes.filter(function(n) { return n.Type != dontshow });
+  links = links.filter(function(l) { return nodes[l.Source] && nodes[l.Target] });
+}
+
+links.forEach(function(link) {
+  link.source = nodes[link.Source];
+  link.target = nodes[link.Target];
+  link.weight = link.Weight;
+  if (nodes[link.Target].degree) {
+    nodes[link.Target].degree += 1;
+  } else {
+    nodes[link.Target].degree = 1;
+  }
+  if (nodes[link.Source].degree) {
+    nodes[link.Source].degree += 1;
+  } else {
+    nodes[link.Source].degree = 1;
+  }
+});
+
+var width = x,
+    height = y;
+
+var force = d3.layout.force()
+    .nodes(d3.values(nodes))
+    .links(links)
+    .size([width, height])
+    .linkDistance(100)
+    .linkStrength(0.7)
+    .charge(-400)
+    .on("tick", tick)
+    .start();
+
+var svg = d3.select("body")
+  .append("svg")
+  .attr("width", "100%")
+  .attr("height", "100%")
+  .call(d3.behavior.zoom().on("zoom", function () {
+    svg.attr("transform", "translate(" + d3.event.translate + ")" + " scale(" + d3.event.scale + ")")
+  }))
+  .append("g")
+
+var container = svg.append("g");
+
+// Per-type markers, as they don't inherit styles.
+/*svg.append("defs").selectAll("marker")
+    .data(["suit", "licensing", "resolved"])
+  .enter().append("marker")
+    .attr("id", function(d) { return d; })
+    .attr("viewBox", "0 -5 10 10")
+    .attr("refX", 15)
+    .attr("refY", -1.5)
+    .attr("markerWidth", 6)
+    .attr("markerHeight", 6)
+    .attr("orient", "auto")
+  .append("path")
+    .attr("d", "M0,-5L10,0L0,5");*/
+
+var path = svg.append("g").selectAll("path")
+    .data(force.links())
+  .enter().append("path")
+    .attr("class", function(d) { return "link " + d.Category; })
+    .attr("marker-end", function(d) { return "url(#" + d.type + ")"; });
+
+var circle = svg.append("g").selectAll("circle")
+    .data(force.nodes())
+  .enter().append("circle")
+    .attr("class", function(d) { return "node " + d.Type })
+    .attr("r", function(d) { return 4 + d.degree })
+    .call(force.drag);
+
+var text = svg.append("g").selectAll("text")
+    .data(force.nodes())
+  .enter().append("text")
+    .attr("x", 8)
+    .attr("y", ".31em")
+    .text(function(d) { return d.Label; });
+
+// Use elliptical arc path segments to doubly-encode directionality.
+function tick() {
+  path.attr("d", linkArc);
+  circle.attr("transform", transform);
+  text.attr("transform", transform);
+}
+
+function linkArc(d) {
+  var dr = 0;
+  if (getParameterByName("arc") == "true") {
+    var dx = d.target.x - d.source.x,
+        dy = d.target.y - d.source.y;
+    dr = Math.sqrt(dx * dx + dy * dy);
+  }
+  return "M" + d.source.x + "," + d.source.y + "A" + dr + "," + dr + " 0 0,1 " + d.target.x + "," + d.target.y;
+}
+
+function transform(d) {
+  return "translate(" + d.x + "," + d.y + ")";
+}
+
+function getParameterByName(name, url) {
+    if (!url) url = window.location.href;
+    name = name.replace(/[\[\]]/g, "\\$&");
+    var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+        results = regex.exec(url);
+    if (!results) return null;
+    if (!results[2]) return '';
+    return decodeURIComponent(results[2].replace(/\+/g, " "));
+}
+
+function updateQueryString(key, value, url) {
+    if (!url) url = window.location.href;
+    var re = new RegExp("([?&])" + key + "=.*?(&|#|$)(.*)", "gi"),
+        hash;
+
+    if (re.test(url)) {
+        if (typeof value !== 'undefined' && value !== null)
+            return url.replace(re, '$1' + key + "=" + value + '$2$3');
+        else {
+            hash = url.split('#');
+            url = hash[0].replace(re, '$1$3').replace(/(&|\?)$/, '');
+            if (typeof hash[1] !== 'undefined' && hash[1] !== null) 
+                url += '#' + hash[1];
+            return url;
+        }
+    }
+    else {
+        if (typeof value !== 'undefined' && value !== null) {
+            var separator = url.indexOf('?') !== -1 ? '&' : '?';
+            hash = url.split('#');
+            url = hash[0] + separator + key + '=' + value;
+            if (typeof hash[1] !== 'undefined' && hash[1] !== null) 
+                url += '#' + hash[1];
+            return url;
+        }
+        else
+            return url;
+    }
+}
+
+</script>
+
+<div id="control-bar">
+  <a href="#" onclick="document.location=updateQueryString('arc', 'true');">Arcs</a> |
+  <a href="#" onclick="document.location=updateQueryString('arc', 'false');">Straight</a>
+  &nbsp;
+  &nbsp;
+  &nbsp;
+  <a href="#" onclick="document.location=updateQueryString('dontshow', 'other');">Filter</a> |
+  <a href="#" onclick="document.location=updateQueryString('dontshow', 'none');">Unfiltered</a>
+</div>
+
+</body>
+</html>
