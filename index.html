@@ -41,6 +41,11 @@
     fill: rgb(130, 138, 184);
   }
 
+  .node.disabled {
+    fill: #ddd!important;
+    stroke: none;
+  }
+
   .link {
     fill: none;
     stroke: #666;
@@ -70,6 +75,11 @@
   .link.owned-by {
     stroke: rgb(29, 42, 85);
     stroke-width: 8;
+  }
+
+  .link.disabled {
+    stroke: #ddd!important;
+    stroke-width: 1!important;
   }
 
   circle {
@@ -131,6 +141,8 @@
     nodes = nodes.filter(function(n) { return n.Type != dontshow });
   }
 
+  var year = getParameterByName("year");
+
   function findNodeById(id) {
     var r = null;
     nodes.forEach(function(node) {
@@ -146,16 +158,30 @@
     link.target = findNodeById(link.Target);
     if (link.source && link.target) {
       link.weight = link.Weight;
-      if (link.target.degree != undefined) {
-        link.target.degree += 1;
+      if (year && dontshow == 'other' && (isNaN(link.Year) || link.Year > year)) {
+        link.disabledClass = " disabled";
       } else {
-        link.target.degree = 1;
+        link.disabledClass = "";
+        if (link.target.degree != undefined) {
+          link.target.degree += 1;
+        } else {
+          link.target.degree = 1;
+        }
+        if (link.source.degree != undefined) {
+          link.source.degree += 1;
+        } else {
+          link.source.degree = 1;
+        }
       }
-      if (link.source.degree != undefined) {
-        link.source.degree += 1;
-      } else {
-        link.source.degree = 1;
-      }
+    }
+  });
+
+  nodes.forEach(function(node) {
+    if (!node.degree) {
+      node.disabledClass = " disabled";
+      node.degree = 1;
+    } else {
+      node.disabledClass = "";
     }
   });
 
@@ -190,13 +216,13 @@
   var path = svg.append("g").selectAll("path")
       .data(force.links())
     .enter().append("path")
-      .attr("class", function(d) { return "link " + d.Category; })
+      .attr("class", function(d) { return "link " + d.Category + d.disabledClass; })
       .attr("marker-end", function(d) { return "url(#" + d.type + ")"; });
 
   var circle = svg.append("g").selectAll("circle")
       .data(force.nodes())
     .enter().append("circle")
-      .attr("class", function(d) { return "node " + d.Type })
+      .attr("class", function(d) { return "node " + d.Type + d.disabledClass })
       .attr("r", function(d) { return 4 + d.degree })
       .call(force.drag);
 
@@ -280,12 +306,44 @@
     &nbsp;
     <a href="#" onclick="document.location=updateQueryString('dontshow', 'other');">Filter</a> |
     <a href="#" onclick="document.location=updateQueryString('dontshow', 'none');">Unfiltered</a>
+    &nbsp;
+    &nbsp;
+    &nbsp;
+    <div id="time-control" style="display: none;">
+      Up until (only in filtered view):
+      <a href="#" onclick="document.location=updateQueryString('year', '2000');">2000</a> ,
+      <a href="#" onclick="document.location=updateQueryString('year', '2001');">2001</a> ,
+      <a href="#" onclick="document.location=updateQueryString('year', '2002');">2002</a> ,
+      <a href="#" onclick="document.location=updateQueryString('year', '2003');">2003</a> ,
+      <a href="#" onclick="document.location=updateQueryString('year', '2004');">2004</a> ,
+      <a href="#" onclick="document.location=updateQueryString('year', '2005');">2005</a> ,
+      <a href="#" onclick="document.location=updateQueryString('year', '2006');">2006</a> ,
+      <a href="#" onclick="document.location=updateQueryString('year', '2007');">2007</a> ,
+      <a href="#" onclick="document.location=updateQueryString('year', '2008');">2008</a> ,
+      <a href="#" onclick="document.location=updateQueryString('year', '2009');">2009</a> ,
+      <a href="#" onclick="document.location=updateQueryString('year', '2010');">2010</a> ,
+      <a href="#" onclick="document.location=updateQueryString('year', '2011');">2011</a> ,
+      <a href="#" onclick="document.location=updateQueryString('year', '2012');">2012</a> ,
+      <a href="#" onclick="document.location=updateQueryString('year', '2013');">2013</a> ,
+      <a href="#" onclick="document.location=updateQueryString('year', '2014');">2014</a> ,
+      <a href="#" onclick="document.location=updateQueryString('year', '2015');">2015</a> ,
+      <a href="#" onclick="document.location=updateQueryString('year', '2016');">2016</a> ,
+      <a href="#" onclick="document.location=updateQueryString('year', '2017');">2017</a> ,
+      <a href="#" onclick="document.location=updateQueryString('year', '2018');">all</a>
+    </div>
     
     <div style="float: right; padding-right: 40px;">
       <a href="https://github.com/gerwin3/fintech-paper-data" target="_blank">GitHub</a> |
       <a href="https://docs.google.com/spreadsheets/d/1jHu5d3gD0_kfy8UYeteNkZU9DHy-X-9R0jXSvK3y-V0/edit?usp=sharing" target="_blank">Data</a>
     </div>
   </div>
+
+  <script type="text/javascript">
+    if (dontshow == 'other') {
+      // only show time range thingy when filtered
+      document.getElementById('time-control').style = 'display: inline';
+    }
+  </script>
 
 </body>
 </html>
