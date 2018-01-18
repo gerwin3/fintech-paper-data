@@ -82,6 +82,22 @@
     stroke-width: 1!important;
   }
 
+  #legend {
+    font-family: Arial, sans-serif;
+    width: 300px;
+    height: 350px;
+    position: fixed;
+    right: 50px;
+    bottom: 50px;
+    background-color: rgba(255,255,255,0.8);
+    padding: 16px;
+    box-shadow: #999 5px 5px 12px;;
+  }
+
+  #legend table {
+    font-size: 12px;
+  }
+
   circle {
     fill: #ccc;
     stroke: #333;
@@ -336,6 +352,54 @@
       <a href="https://github.com/gerwin3/fintech-paper-data" target="_blank">GitHub</a> |
       <a href="https://docs.google.com/spreadsheets/d/1jHu5d3gD0_kfy8UYeteNkZU9DHy-X-9R0jXSvK3y-V0/edit?usp=sharing" target="_blank">Data</a>
     </div>
+  </div>
+
+  <div id="legend">
+    <h3 style="margin-top: 0px;">Legend</h3>
+    <table>
+      <tr><td colspan="2"><em style="font-size: 13px;">nodes</em></td></tr>
+      <tr>
+        <td><svg style="width:20px;height:20px;"><circle class="node fintech" r="8" style="transform:translate(10px,10px)"></circle></svg></td>
+        <td>FinTech company</td>
+      </tr>
+      <tr>
+        <td><svg style="width:20px;height:20px;"><circle class="node bigbank" r="8" style="transform:translate(10px,10px)"></circle></svg></td>
+        <td>bank or other traditional financial services provider</td>
+      </tr>
+      <tr>
+        <td><svg style="width:20px;height:20px;"><circle class="node other" r="8" style="transform:translate(10px,10px)"></circle></svg></td>
+        <td>other companies (only shown in unfiltered)</td>
+      </tr>
+      <tr>
+        <td><svg style="width:20px;height:20px;"><circle class="node disabled" r="8" style="transform:translate(10px,10px)"></circle></svg></td>
+        <td>did not exist then (in time series mode)</td>
+      </tr>
+      <tr>
+        <td></td>
+        <td><em>node size indicates degree (number of links)</em></td>
+      </tr>
+      <tr><td colspan="2"><em style="font-size: 13px;"><br/>links</em></td></tr>
+      <tr>
+        <td><svg style="width:20px;height:20px;"><path class="link owned-by" d="M 0 10 L 20 10"></path></svg></td>
+        <td>owned by</td>
+      </tr>
+      <tr>
+        <td><svg style="width:20px;height:20px;"><path class="link investment" d="M 0 10 L 20 10"></path></svg></td>
+        <td>normal investment (funding)</td>
+      </tr>
+      <tr>
+        <td><svg style="width:20px;height:20px;"><path class="link debt" d="M 0 10 L 20 10"></path></svg></td>
+        <td>debt investment (loan)</td>
+      </tr>
+      <tr>
+        <td><svg style="width:20px;height:20px;"><path class="link partnership" d="M 0 10 L 20 10"></path></svg></td>
+        <td>strategic partnership</td>
+      </tr>
+      <tr>
+        <td><svg style="width:20px;height:20px;"><path class="link disabled" d="M 0 10 L 20 10"></path></svg></td>
+        <td>did not exist then (in time series mode)</td>
+      </tr>
+    </table>
   </div>
 
   <script type="text/javascript">
